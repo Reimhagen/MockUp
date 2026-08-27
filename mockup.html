@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Interviewer — Sesi Wawancara</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #075E54;
+    --primary-mid: #0C7A6B;
+    --primary-light: #128C7E;
+    --accent: #25D366;
+    --accent-deep: #0E9E56;
+    --ink: #10221D;
+    --muted: #5C7772;
+    --muted-soft: #86A19C;
+    --surface: #FFFFFF;
+    --surface-tint: #F3F8F6;
+    --surface-sunken: #EAF3F0;
+    --border: #DAE7E3;
+    --border-strong: #BFD6D0;
+    --danger: #C24A3B;
+    --warn-bg: #FDF3E7;
+    --warn-ink: #8A5A1E;
+    --success-bg: #E6F7ED;
+    --font-display: "Source Serif 4", Georgia, serif;
+    --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-mono: "Roboto Mono", ui-monospace, monospace;
+    --radius: 14px;
+    --radius-sm: 9px;
+    --shadow-card: 0 1px 2px rgba(16,34,29,0.04), 0 18px 40px -20px rgba(16,34,29,0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--ink);
+    background:
+      radial-gradient(1100px 620px at 84% -10%, rgba(37,211,102,0.16), transparent 60%),
+      radial-gradient(900px 700px at -10% 110%, rgba(7,94,84,0.10), transparent 55%),
+      var(--surface-tint);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 20px 40px;
+  }
+
+  /* ===== APP BAR ===== */
+  .appbar {
+    width: 100%;
+    max-width: 1000px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--primary);
+  }
+  .brand-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    box-shadow: 0 4px 10px rgba(7,94,84,0.28);
+  }
+  .appbar-meta {
+    font-size: 12.5px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); }
+  .status-badge {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--success-bg);
+    color: var(--accent-deep);
+  }
+  .status-badge.inactive { background: var(--warn-bg); color: var(--warn-ink); }
+
+  /* ===== STEPS ===== */
+  .steps {
+    width: 100%;
+    max-width: 1000px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted-soft);
+  }
+  .step.is-active { color: var(--primary); }
+  .step.is-done { color: var(--accent-deep); }
+  .step-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--surface-sunken);
+    color: var(--muted-soft);
+    border: 1.5px solid var(--border);
+    flex-shrink: 0;
+  }
+  .step.is-active .step-num { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .step.is-done .step-num { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .step-line {
+    flex: 1;
+    height: 1.5px;
+    background: var(--border);
+    position: relative;
+    top: 1px;
+    min-width: 16px;
+  }
+  .step.is-done ~ .step-line { background: var(--accent); }
+
+  /* ===== MAIN CARD ===== */
+  .card {
+    width: 100%;
+    max-width: 1000px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+  .card-head {
+    padding: 28px 34px 20px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(37,211,102,0.05), transparent 70%);
+  }
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    color: var(--accent-deep);
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 26px;
+    margin: 0 0 6px;
+    color: var(--ink);
+  }
+  .sub {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+  .card-body { padding: 24px 34px 30px; }
+
+  /* ===== JOB ORDER SECTION ===== */
+  .job-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 16px 0 20px;
+  }
+  .job-card {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background: var(--surface);
+    position: relative;
+  }
+  .job-card:hover:not(.disabled) {
+    border-color: var(--primary-light);
+    box-shadow: 0 4px 12px rgba(7,94,84,0.10);
+  }
+  .job-card.selected {
+    border-color: var(--primary);
+    background: var(--surface-tint);
+    box-shadow: 0 0 0 3px rgba(7,94,84,0.12);
+  }
+  .job-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .job-card .title {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  .job-card .meta {
+    font-size: 12.5px;
+    color: var(--muted);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .job-card .meta span { display: flex; align-items: center; gap: 4px; }
+  .job-card .badge-count {
+    background: var(--surface-sunken);
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .job-card .check {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    color: var(--primary);
+    display: none;
+  }
+  .job-card.selected .check { display: block; }
+
+  /* ===== INTERVIEW CHAT ===== */
+  .chat-container {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    height: 380px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--surface-tint);
+    margin-top: 16px;
+  }
+  .chat-messages {
+    flex: 1;
+    padding: 18px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .chat-message {
+    max-width: 78%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    line-height: 1.6;
+    font-size: 14px;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .chat-message.ai {
+    align-self: flex-start;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+  }
+  .chat-message.user {
+    align-self: flex-end;
+    background: var(--primary);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .chat-message .sender {
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    opacity: 0.7;
+  }
+  .chat-message.user .sender { color: rgba(255,255,255,0.8); }
+  .chat-message .typing-dots {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px 0;
+  }
+  .chat-message .typing-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--muted-soft);
+    animation: typingBounce 1.4s infinite;
+  }
+  .chat-message .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .chat-message .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+  }
+  .chat-input-area {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .chat-input-area input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .chat-input-area input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(7,94,84,0.10);
+  }
+  .chat-input-area button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .chat-input-area button:hover:not(:disabled) {
+    background: var(--primary-mid);
+    transform: translateY(-1px);
+  }
+  .chat-input-area button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .chat-input-area button .mic-icon {
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  /* ===== EVALUATION PANEL ===== */
+  .eval-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin: 16px 0 10px;
+  }
+  .eval-item {
+    padding: 14px 16px;
+    background: var(--surface-tint);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+  }
+  .eval-item .label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted-soft);
+  }
+  .eval-item .value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-top: 4px;
+  }
+  .eval-item .value .sub {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--muted);
+  }
+  .eval-item .bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .eval-item .bar .fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--accent);
+    transition: width 0.6s ease;
+  }
+  .eval-item .bar .fill.warning { background: #F59E0B; }
+  .eval-item .bar .fill.danger { background: var(--danger); }
+
+  /* ===== CONTROLS ===== */
+  .actions {
+    margin-top: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .actions-note { font-size: 13px; color: var(--muted-soft); }
+  .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  button.btn {
+    padding: 11px 22px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  button.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  button.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: #fff;
+    box-shadow: 0 8px 16px -8px rgba(7,94,84,0.4);
+  }
+  button.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -10px rgba(7,94,84,0.5);
+  }
+  button.btn-secondary {
+    background: var(--surface-sunken);
+    color: var(--ink);
+    border: 1.5px solid var(--border);
+  }
+  button.btn-secondary:hover:not(:disabled) {
+    background: var(--border);
+  }
+  button.btn-danger {
+    background: var(--danger);
+    color: #fff;
+  }
+  button.btn-danger:hover:not(:disabled) {
+    background: #A83A2E;
+  }
+  button.btn-success {
+    background: var(--accent);
+    color: #fff;
+  }
+  button.btn-success:hover:not(:disabled) {
+    background: var(--accent-deep);
+  }
+
+  .hidden { display: none !important; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 640px) {
+    .card-head, .card-body { padding: 18px 18px 22px; }
+    .job-grid { grid-template-columns: 1fr; }
+    .chat-message { max-width: 90%; }
+    .eval-grid { grid-template-columns: 1fr 1fr; }
+    .actions { flex-direction: column; align-items: stretch; }
+    .btn-group { justify-content: stretch; }
+    .btn-group button { flex: 1; }
+    .appbar-meta .hide-mobile { display: none; }
+    h1 { font-size: 21px; }
+    .step span:last-child { display: none; }
+    .step.is-active span:last-child { display: inline; font-size: 12px; }
+  }
+  @media (max-width: 480px) {
+    body { padding: 16px 10px 30px; }
+    .eval-grid { grid-template-columns: 1fr; }
+  }
+
+  /* scrollbar styling */
+  .chat-messages::-webkit-scrollbar {
+    width: 4px;
+  }
+  .chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .chat-messages::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== APP BAR ===== -->
+<div class="appbar">
+  <div class="brand">
+    <div class="brand-mark">AI</div>
+    <span>AI Interviewer &middot; HR Screening</span>
+  </div>
+  <div class="appbar-meta">
+    <span>HRD &middot; Dian Pratama</span>
+    <span class="dot"></span>
+    <span id="clockText">Selasa, 24 Agu 2026</span>
+    <span class="status-badge" id="sessionStatus">● Siap</span>
+  </div>
+</div>
+
+<!-- ===== STEPS ===== -->
+<div class="steps">
+  <div class="step is-done"><span class="step-num">✓</span><span>Client &amp; Project</span></div>
+  <div class="step-line"></div>
+  <div class="step is-active"><span class="step-num">2</span><span>Pilih Job Order</span></div>
+  <div class="step-line"></div>
+  <div class="step"><span class="step-num">3</span><span>Wawancara AI</span></div>
+</div>
+
+<!-- ===== MAIN CARD ===== -->
+<div class="card">
+  <div class="card-head">
+    <p class="eyebrow" id="stepLabel">Step 2 dari 3</p>
+    <h1 id="stepTitle">Pilih Job Order / Vacancy</h1>
+    <p class="sub" id="stepDesc">Pilih posisi yang akan diwawancarai. Kandidat akan disesuaikan dengan requirement job order.</p>
+  </div>
+
+  <div class="card-body">
+
+    <!-- ===== STEP 2: JOB ORDER SELECTION ===== -->
+    <div id="stepJobOrder">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+        <span style="font-weight:600; font-size:14px;">Pilih Job Order untuk Project: <span id="selectedProjectName" style="color:var(--primary);">—</span></span>
+        <span style="font-size:12.5px; color:var(--muted-soft);" id="jobCount">Memuat...</span>
+      </div>
+      <div class="job-grid" id="jobGrid">
+        <!-- dynamically populated -->
+      </div>
+      <div class="actions" style="margin-top:12px;">
+        <span class="actions-note" id="jobNote">Pilih satu job order untuk melanjutkan ke sesi wawancara.</span>
+        <div class="btn-group">
+          <button class="btn btn-secondary" id="backToProject">← Kembali</button>
+          <button class="btn btn-primary" id="startInterviewBtn" disabled>Mulai Wawancara →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== STEP 3: INTERVIEW ===== -->
+    <div id="stepInterview" class="hidden">
+      <!-- Candidate Info -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+        <div>
+          <span style="font-weight:600; font-size:15px;" id="interviewJobTitle">—</span>
+          <span style="font-size:13px; color:var(--muted); margin-left:10px;" id="interviewClientInfo">—</span>
+        </div>
+        <div style="display:flex; gap:12px; font-size:13px; color:var(--muted);">
+          <span>⏱ <span id="timerDisplay">00:00</span></span>
+          <span>💬 <span id="messageCount">0</span> pesan</span>
+        </div>
+      </div>
+
+      <!-- Chat -->
+      <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+          <!-- messages appear here -->
+        </div>
+        <div class="chat-input-area">
+          <input type="text" id="chatInput" placeholder="Ketik jawaban Anda di sini..." disabled />
+          <button id="sendBtn" disabled>
+            <span class="mic-icon">⌨</span> Kirim
+          </button>
+        </div>
+      </div>
+
+      <!-- Evaluation -->
+      <div style="margin-top:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <span style="font-weight:600; font-size:14px;">📊 Evaluasi Real-time</span>
+          <span style="font-size:12px; color:var(--muted-soft);" id="evalNote">Analisis percakapan berlangsung...</span>
+        </div>
+        <div class="eval-grid" id="evalGrid">
+          <div class="eval-item">
+            <div class="label">Komunikasi</div>
+            <div class="value" id="evalComm">0 <span class="sub">/ 10</span></div>
+            <div class="bar"><div class="fill" id="evalCommBar" style="width:0%;"></div></div>
+          </div>
+          <div class="eval-item">
+            <div class="label">Relevansi Jawaban</div>
+            <div class="value" id="evalRelevance">0 <span class="sub">/ 10</span></div>
+            <div class="bar"><div class="fill" id="evalRelBar" style="width:0%;"></div></div>
+          </div>
+          <div class="eval-item">
+            <div class="label">Kepercayaan Diri</div>
+            <div class="value" id="evalConfidence">0 <span class="sub">/ 10</span></div>
+            <div class="bar"><div class="fill" id="evalConfBar" style="width:0%;"></div></div>
+          </div>
+          <div class="eval-item">
+            <div class="label">Skor Overall</div>
+            <div class="value" id="evalOverall">0 <span class="sub">%</span></div>
+            <div class="bar"><div class="fill" id="evalOverallBar" style="width:0%;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interview Controls -->
+      <div class="actions" style="margin-top:16px;">
+        <span class="actions-note" id="interviewNote">Jawab pertanyaan AI dengan natural. Tekan Enter atau klik Kirim.</span>
+        <div class="btn-group">
+          <button class="btn btn-secondary" id="endInterviewBtn">⏹ Akhiri Sesi</button>
+          <button class="btn btn-success" id="exportReportBtn" disabled>📄 Export Report</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<div class="footnote" style="max-width:1000px; width:100%; margin-top:18px; display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted-soft);">
+  <span>AI Interviewer v2.0 · Mockup untuk screening kandidat</span>
+  <span id="totalLoaded">Siap digunakan</span>
+</div>
+
+<script>
+/* ========================================================================
+   FULL MOCK IMPLEMENTATION — AI Interviewer
+   ======================================================================== */
+
+// ======================== DATA ========================
+
+// Project data (from previous step)
+const SELECTED_PROJECT = {
+  id: "PRJ-0001",
+  projectName: "Security Gedung Makmur",
+  client: "PT Sumber Makmur Retailindo",
+  clientId: "CLT-001",
+};
+
+// Job Orders for this project
+const JOB_ORDERS = [
+  {
+    id: "JO-001",
+    title: "Security Officer - Shift Pagi",
+    department: "Security",
+    location: "Jakarta Selatan",
+    candidates: 12,
+    requirements: ["Pengalaman 2+ tahun", "Sertifikasi security", "Fisik sehat"],
+    questions: [
+      "Ceritakan pengalaman Anda sebagai security officer.",
+      "Bagaimana cara Anda menangani situasi darurat?",
+      "Apa yang Anda ketahui tentang protokol keamanan gedung?",
+      "Bagaimana cara Anda berkomunikasi dengan tim dan atasan?",
+      "Ceritakan saat Anda berhasil menyelesaikan konflik di tempat kerja."
+    ]
+  },
+  {
+    id: "JO-002",
+    title: "Security Supervisor - Shift Malam",
+    department: "Security",
+    location: "Jakarta Selatan",
+    candidates: 8,
+    requirements: ["Pengalaman 5+ tahun", "Leadership", "Manajemen tim"],
+    questions: [
+      "Ceritakan pengalaman kepemimpinan Anda dalam tim security.",
+      "Bagaimana strategi Anda dalam mengelola tim shift malam?",
+      "Pernahkah Anda menghadapi situasi kritis? Bagaimana Anda menanganinya?",
+      "Bagaimana cara Anda memastikan seluruh anggota tim patuh pada prosedur?",
+      "Apa yang membuat Anda cocok untuk posisi supervisor?"
+    ]
+  },
+  {
+    id: "JO-003",
+    title: "Security Coordinator - Operasional",
+    department: "Security",
+    location: "Jakarta Selatan",
+    candidates: 5,
+    requirements: ["Pengalaman 3+ tahun", "Koordinasi antar shift", "Reporting"],
+    questions: [
+      "Bagaimana Anda mengkoordinasikan antar shift security?",
+      "Apa pengalaman Anda dalam membuat laporan keamanan?",
+      "Bagaimana cara Anda menangani keluhan dari pengunjung atau karyawan?",
+      "Ceritakan tentang sistem keamanan yang pernah Anda kelola.",
+      "Bagaimana cara Anda memprioritaskan tugas dalam situasi sibuk?"
+    ]
+  }
+];
+
+// AI Interview script
+const AI_SCRIPT = {
+  opening: (jobTitle) => `Selamat pagi! Saya adalah AI Interviewer untuk posisi **${jobTitle}**. Perkenalkan diri Anda secara singkat, dan ceritakan mengapa Anda tertarik dengan posisi ini.`,
+  followUp: [
+    "Menarik! Bisa ceritakan lebih detail tentang pengalaman tersebut?",
+    "Bagaimana Anda menghadapi tantangan dalam situasi itu?",
+    "Apa yang Anda pelajari dari pengalaman tersebut?",
+    "Bagaimana Anda menilai keberhasilan dalam peran ini?",
+    "Apa yang membuat Anda berbeda dari kandidat lain?",
+  ],
+  closing: "Terima kasih atas jawaban Anda. Sesi wawancara akan segera berakhir. Apakah ada pertanyaan terakhir dari Anda?"
+};
+
+// ======================== STATE ========================
+
+let state = {
+  step: 'jobOrder', // 'jobOrder' | 'interview'
+  selectedJob: null,
+  interviewActive: false,
+  messages: [],
+  messageCount: 0,
+  timer: 0,
+  timerInterval: null,
+  isTyping: false,
+  currentQuestionIndex: 0,
+  jobQuestions: [],
+  evalScores: { comm: 0, relevance: 0, confidence: 0, overall: 0 },
+  totalResponses: 0,
+  isEnding: false,
+};
+
+// ======================== DOM REFS ========================
+
+const $ = (id) => document.getElementById(id);
+const stepJobOrder = $('stepJobOrder');
+const stepInterview = $('stepInterview');
+const jobGrid = $('jobGrid');
+const jobCount = $('jobCount');
+const jobNote = $('jobNote');
+const startInterviewBtn = $('startInterviewBtn');
+const backToProject = $('backToProject');
+const selectedProjectName = $('selectedProjectName');
+const interviewJobTitle = $('interviewJobTitle');
+const interviewClientInfo = $('interviewClientInfo');
+const chatMessages = $('chatMessages');
+const chatInput = $('chatInput');
+const sendBtn = $('sendBtn');
+const timerDisplay = $('timerDisplay');
+const messageCount = $('messageCount');
+const evalComm = $('evalComm');
+const evalRelevance = $('evalRelevance');
+const evalConfidence = $('evalConfidence');
+const evalOverall = $('evalOverall');
+const evalCommBar = $('evalCommBar');
+const evalRelBar = $('evalRelBar');
+const evalConfBar = $('evalConfBar');
+const evalOverallBar = $('evalOverallBar');
+const evalNote = $('evalNote');
+const interviewNote = $('interviewNote');
+const endInterviewBtn = $('endInterviewBtn');
+const exportReportBtn = $('exportReportBtn');
+const sessionStatus = $('sessionStatus');
+const stepLabel = $('stepLabel');
+const stepTitle = $('stepTitle');
+const stepDesc = $('stepDesc');
+
+// ======================== HELPERS ========================
+
+function formatTime(seconds) {
+  const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+  const s = String(seconds % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function shuffleArray(arr) { return arr.sort(() => Math.random() - 0.5); }
+
+// ======================== RENDER JOB ORDER ========================
+
+function renderJobOrders() {
+  selectedProjectName.textContent = SELECTED_PROJECT.projectName;
+  jobCount.textContent = `${JOB_ORDERS.length} job order tersedia`;
+
+  jobGrid.innerHTML = '';
+  JOB_ORDERS.forEach((job, index) => {
+    const card = document.createElement('div');
+    card.className = 'job-card';
+    card.dataset.index = index;
+    card.innerHTML = `
+      <div class="check">✓</div>
+      <div class="title">${job.title}</div>
+      <div class="meta">
+        <span>🏢 ${job.department}</span>
+        <span>📍 ${job.location}</span>
+        <span class="badge-count">👥 ${job.candidates} kandidat</span>
+      </div>
+      <div style="margin-top:6px; font-size:12px; color:var(--muted);">
+        ${job.requirements.join(' · ')}
+      </div>
+    `;
+    card.addEventListener('click', () => selectJob(index));
+    jobGrid.appendChild(card);
+  });
+}
+
+function selectJob(index) {
+  const cards = jobGrid.querySelectorAll('.job-card');
+  cards.forEach((c, i) => c.classList.toggle('selected', i === index));
+
+  state.selectedJob = JOB_ORDERS[index];
+  startInterviewBtn.disabled = false;
+  jobNote.textContent = `Terpilih: ${state.selectedJob.title} (${state.selectedJob.candidates} kandidat)`;
+  jobNote.style.color = 'var(--primary)';
+}
+
+// ======================== INTERVIEW ENGINE ========================
+
+async function startInterview() {
+  if (!state.selectedJob) return;
+
+  state.step = 'interview';
+  state.jobQuestions = shuffleArray([...state.selectedJob.questions]);
+  state.currentQuestionIndex = 0;
+  state.messages = [];
+  state.messageCount = 0;
+  state.totalResponses = 0;
+  state.evalScores = { comm: 0, relevance: 0, confidence: 0, overall: 0 };
+  state.isEnding = false;
+  state.timer = 0;
+
+  // UI Transition
+  stepJobOrder.classList.add('hidden');
+  stepInterview.classList.remove('hidden');
+  stepLabel.textContent = 'Step 3 dari 3 — Sesi Wawancara';
+  stepTitle.textContent = 'Wawancara AI Berlangsung';
+  stepDesc.textContent = `Posisi: ${state.selectedJob.title} · ${state.selectedJob.department}`;
+
+  interviewJobTitle.textContent = state.selectedJob.title;
+  interviewClientInfo.textContent = `| ${SELECTED_PROJECT.client} | ${state.selectedJob.location}`;
+  sessionStatus.textContent = '● Wawancara Aktif';
+  sessionStatus.className = 'status-badge';
+
+  // Clear chat
+  chatMessages.innerHTML = '';
+  chatInput.disabled = false;
+  sendBtn.disabled = false;
+  chatInput.focus();
+
+  // Start timer
+  if (state.timerInterval) clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(() => {
+    state.timer++;
+    timerDisplay.textContent = formatTime(state.timer);
+  }, 1000);
+
+  // Update counts
+  updateMessageCount();
+
+  // Opening message
+  await addAIMessage(AI_SCRIPT.opening(state.selectedJob.title));
+  chatInput.focus();
+
+  // Enable input
+  chatInput.disabled = false;
+  sendBtn.disabled = false;
+  interviewNote.textContent = 'Silakan perkenalkan diri Anda.';
+
+  // Reset eval
+  updateEvaluation();
+}
+
+async function addAIMessage(text) {
+  state.isTyping = true;
+  chatInput.disabled = true;
+  sendBtn.disabled = true;
+
+  // Show typing indicator
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'chat-message ai';
+  typingDiv.innerHTML = `
+    <div class="sender">🤖 AI Interviewer</div>
+    <div class="typing-dots"><span></span><span></span><span></span></div>
+  `;
+  chatMessages.appendChild(typingDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  // Simulate thinking
+  await sleep(800 + getRandomInt(0, 600));
+
+  // Remove typing indicator
+  typingDiv.remove();
+
+  // Add actual message
+  const msgDiv = document.createElement('div');
+  msgDiv.className = 'chat-message ai';
+  // Simple markdown-like bold
+  const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  msgDiv.innerHTML = `<div class="sender">🤖 AI Interviewer</div>${formattedText}`;
+  chatMessages.appendChild(msgDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  state.messages.push({ role: 'ai', text });
+  state.isTyping = false;
+  chatInput.disabled = false;
+  sendBtn.disabled = false;
+  chatInput.focus();
+}
+
+async function addUserMessage(text) {
+  const msgDiv = document.createElement('div');
+  msgDiv.className = 'chat-message user';
+  msgDiv.innerHTML = `<div class="sender">👤 Kandidat</div>${text}`;
+  chatMessages.appendChild(msgDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  state.messages.push({ role: 'user', text });
+  state.messageCount++;
+  state.totalResponses++;
+  updateMessageCount();
+
+  // Analyze response and update evaluation
+  analyzeResponse(text);
+
+  // Get AI follow-up or next question
+  await getAIResponse(text);
+}
+
+async function getAIResponse(userText) {
+  // Check if interview should end
+  if (state.isEnding) return;
+
+  const totalQuestions = state.jobQuestions.length;
+
+  // If we've asked all questions, wrap up
+  if (state.currentQuestionIndex >= totalQuestions) {
+    await addAIMessage(AI_SCRIPT.closing);
+    state.isEnding = true;
+    chatInput.disabled = true;
+    sendBtn.disabled = true;
+    interviewNote.textContent = '✅ Sesi wawancara selesai. Klik "Export Report" untuk melihat hasil.';
+    exportReportBtn.disabled = false;
+    sessionStatus.textContent = '● Selesai';
+    sessionStatus.className = 'status-badge inactive';
+    return;
+  }
+
+  // Ask next question
+  const nextQ = state.jobQuestions[state.currentQuestionIndex];
+  state.currentQuestionIndex++;
+
+  // Add a random follow-up before the next question sometimes
+  if (state.totalResponses > 1 && state.totalResponses % 2 === 0 && state.currentQuestionIndex < totalQuestions) {
+    const followUp = AI_SCRIPT.followUp[getRandomInt(0, AI_SCRIPT.followUp.length - 1)];
+    await addAIMessage(followUp);
+    // After follow-up, don't advance question index
+    return;
+  }
+
+  await addAIMessage(nextQ);
+}
+
+function analyzeResponse(text) {
+  // Simulate AI evaluation based on response characteristics
+  const wordCount = text.split(/\s+/).length;
+  const hasDetails = text.includes('saya') || text.includes('kami') || text.includes('pernah');
+  const hasStructure = text.includes('pertama') || text.includes('kedua') || text.includes('selain itu');
+  const isLong = wordCount > 20;
+
+  // Communication: based on clarity and structure
+  let commScore = Math.min(10, Math.round(3 + (isLong ? 3 : 0) + (hasStructure ? 2 : 0) + (wordCount > 10 ? 2 : 0)));
+  commScore = Math.min(10, commScore + getRandomInt(-1, 2));
+
+  // Relevance: based on keywords and context
+  let relevanceScore = Math.min(10, Math.round(4 + (hasDetails ? 3 : 0) + (wordCount > 15 ? 2 : 0) + (text.includes('pengalaman') ? 1 : 0)));
+  relevanceScore = Math.min(10, relevanceScore + getRandomInt(-1, 2));
+
+  // Confidence: based on length and assertiveness
+  let confidenceScore = Math.min(10, Math.round(3 + (isLong ? 2 : 0) + (text.includes('saya mampu') || text.includes('saya yakin') ? 3 : 0) + (wordCount > 10 ? 2 : 0)));
+  confidenceScore = Math.min(10, confidenceScore + getRandomInt(-1, 2));
+
+  // Update weighted average
+  const totalScores = state.evalScores;
+  const weight = 0.3; // new response weight
+  totalScores.comm = Math.round((totalScores.comm * (1 - weight)) + (commScore * weight));
+  totalScores.relevance = Math.round((totalScores.relevance * (1 - weight)) + (relevanceScore * weight));
+  totalScores.confidence = Math.round((totalScores.confidence * (1 - weight)) + (confidenceScore * weight));
+
+  // Overall score with different weighting
+  const overall = Math.round((totalScores.comm * 0.35) + (totalScores.relevance * 0.40) + (totalScores.confidence * 0.25));
+  totalScores.overall = Math.min(10, overall);
+
+  updateEvaluation();
+}
+
+function updateEvaluation() {
+  const s = state.evalScores;
+  const comm = Math.min(10, Math.round(s.comm || 0));
+  const relevance = Math.min(10, Math.round(s.relevance || 0));
+  const confidence = Math.min(10, Math.round(s.confidence || 0));
+  const overall = Math.min(10, Math.round(s.overall || 0));
+
+  evalComm.innerHTML = `${comm} <span class="sub">/ 10</span>`;
+  evalRelevance.innerHTML = `${relevance} <span class="sub">/ 10</span>`;
+  evalConfidence.innerHTML = `${confidence} <span class="sub">/ 10</span>`;
+  evalOverall.innerHTML = `${Math.round(overall * 10)} <span class="sub">%</span>`;
+
+  evalCommBar.style.width = `${comm * 10}%`;
+  evalRelBar.style.width = `${relevance * 10}%`;
+  evalConfBar.style.width = `${confidence * 10}%`;
+  evalOverallBar.style.width = `${overall * 10}%`;
+
+  // Color coding for overall
+  const overallPct = overall * 10;
+  const bar = evalOverallBar;
+  bar.className = 'fill';
+  if (overallPct < 40) bar.classList.add('danger');
+  else if (overallPct < 65) bar.classList.add('warning');
+
+  // Update note
+  if (state.totalResponses > 0) {
+    const msgs = ['Analisis percakapan berlangsung...', 'Evaluasi berdasarkan jawaban kandidat.', 'Skor akan diperbarui setiap respons.'];
+    evalNote.textContent = msgs[Math.min(state.totalResponses - 1, msgs.length - 1)];
+  }
+}
+
+function updateMessageCount() {
+  messageCount.textContent = state.messageCount;
+}
+
+// ======================== END INTERVIEW ========================
+
+function endInterview() {
+  if (state.isEnding) return;
+  state.isEnding = true;
+  clearInterval(state.timerInterval);
+
+  chatInput.disabled = true;
+  sendBtn.disabled = true;
+  sessionStatus.textContent = '● Selesai';
+  sessionStatus.className = 'status-badge inactive';
+  interviewNote.textContent = '✅ Sesi wawancara diakhiri. Klik "Export Report" untuk melihat hasil.';
+  exportReportBtn.disabled = false;
+
+  addAIMessage('Terima kasih telah mengikuti wawancara ini. Waktu Anda sangat kami hargai. Kami akan segera memberikan feedback.');
+}
+
+// ======================== EXPORT REPORT ========================
+
+function exportReport() {
+  const job = state.selectedJob;
+  const s = state.evalScores;
+  const overallPct = Math.round((s.overall || 0) * 10);
+
+  const report = `
+╔══════════════════════════════════════════════════════╗
+║              LAPORAN WAWANCARA AI                    ║
+╠══════════════════════════════════════════════════════╣
+║ Posisi        : ${job.title}
+║ Department    : ${job.department}
+║ Client        : ${SELECTED_PROJECT.client}
+║ Durasi        : ${formatTime(state.timer)}
+║ Total Pesan   : ${state.messageCount}
+╠══════════════════════════════════════════════════════╣
+║  Komunikasi        : ${Math.round(s.comm || 0)} / 10
+║  Relevansi         : ${Math.round(s.relevance || 0)} / 10
+║  Kepercayaan Diri  : ${Math.round(s.confidence || 0)} / 10
+║  ══════════════════════════════════════════════════
+║  OVERALL SCORE     : ${overallPct}%
+╚══════════════════════════════════════════════════════╝
+
+💡 Rekomendasi: ${overallPct >= 70 ? '✅ Layak dilanjutkan ke tahap berikutnya' :
+                  overallPct >= 50 ? '⚠️ Pertimbangkan untuk review lebih lanjut' :
+                  '❌ Mungkin tidak sesuai untuk posisi ini'}
+
+📋 Riwayat Jawaban:
+${state.messages.filter(m => m.role === 'user').map((m, i) => `${i+1}. ${m.text}`).join('\n')}
+  `;
+
+  // Create download
+  const blob = new Blob([report], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Laporan_Wawancara_${job.title.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  interviewNote.textContent = '📄 Laporan berhasil diekspor!';
+}
+
+// ======================== EVENT BINDING ========================
+
+// Send message
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    handleSendMessage();
+  }
+});
+
+sendBtn.addEventListener('click', handleSendMessage);
+
+function handleSendMessage() {
+  const text = chatInput.value.trim();
+  if (!text || state.isTyping || state.isEnding) return;
+
+  chatInput.value = '';
+  addUserMessage(text);
+}
+
+// Start interview
+startInterviewBtn.addEventListener('click', startInterview);
+
+// Back to project selection
+backToProject.addEventListener('click', () => {
+  if (state.step === 'interview') {
+    if (confirm('Keluar dari sesi wawancara? Progress akan hilang.')) {
+      clearInterval(state.timerInterval);
+      state.step = 'jobOrder';
+      stepJobOrder.classList.remove('hidden');
+      stepInterview.classList.add('hidden');
+      stepLabel.textContent = 'Step 2 dari 3';
+      stepTitle.textContent = 'Pilih Job Order / Vacancy';
+      stepDesc.textContent = 'Pilih posisi yang akan diwawancarai. Kandidat akan disesuaikan dengan requirement job order.';
+      sessionStatus.textContent = '● Siap';
+      sessionStatus.className = 'status-badge';
+      exportReportBtn.disabled = true;
+      startInterviewBtn.disabled = true;
+      chatInput.disabled = true;
+      sendBtn.disabled = true;
+    }
+  } else {
+    // Navigate back to step 1 (simulated)
+    alert('🔙 Kembali ke pemilihan Client & Project (simulasi)');
+  }
+});
+
+// End interview
+endInterviewBtn.addEventListener('click', endInterview);
+
+// Export report
+exportReportBtn.addEventListener('click', exportReport);
+
+// ======================== CLOCK ========================
+
+function updateClock() {
+  const now = new Date();
+  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  const d = days[now.getDay()];
+  const date = now.getDate();
+  const month = months[now.getMonth()];
+  const year = now.getFullYear();
+  document.getElementById('clockText').textContent = `${d}, ${date} ${month} ${year}`;
+}
+
+// ======================== INIT ========================
+
+renderJobOrders();
+updateClock();
+setInterval(updateClock, 60000);
+
+console.log('🤖 AI Interviewer Mockup siap digunakan!');
+console.log(`📋 ${JOB_ORDERS.length} job orders tersedia untuk project: ${SELECTED_PROJECT.projectName}`);
+</script>
+</body>
+</html>
